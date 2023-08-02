@@ -1,5 +1,3 @@
-# TryHackMe-Writeups
-
 # TryHackMe CTF Writeups 🚀🔓
 
 Welcome to the TryHackMe CTF Writeups repository! This repository contains detailed writeups and solutions for various Capture The Flag (CTF) challenges I've completed on the TryHackMe platform.
